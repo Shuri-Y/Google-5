@@ -15,14 +15,20 @@ def read_input(filename):
 
 def distance(route):        #ルートの距離の2乗を計算
     dis = 0
-    for i in range(1,len(route)):
-        dis += (route[i][1] - route[i-1][1])*(route[i][1] - route[i-1][1]) + (route[i][2] - route[i-1][2])*(route[i][2] - route[i-1][2])
+    for i in range(1,int(len(route))):
+
+        dx = route[i][1] - route[i-1][1]
+        dy = route[i][2] - route[i-1][2]
+
+        dis += dx*dx + dy*dy
+
     dis += (route[0][1] - route[-1][1])*(route[0][1] - route[-1][1]) + (route[0][2] - route[-1][2])*(route[0][2] - route[-1][2])
     return dis
 #### OK
 
+
 import random
-def make_random_route(pointlist):       #pointlistは[ [1,x1,y1,d1], [2,x2,y2,d2] ... ]のリスト
+def make_random_route(pointlist):       #pointlistは[ [1,x1,y1], [2,x2,y2] ... ]のリスト
     return random.sample(pointlist, k=len(pointlist))       #シャッフルされたリスト
 #### OK
 
@@ -40,6 +46,7 @@ def make_new_route(route_1,route_2):
     return new_route
 #### OK
 
+
 def check_destance(parent_route_1,parent_route_2,new_route):      #new_routeが元のルート以上の長さだった場合、False
     if distance(parent_route_1) and parent_route_2 > new_route:
         return True
@@ -48,23 +55,83 @@ def check_destance(parent_route_1,parent_route_2,new_route):      #new_routeが�
 #### OK
 
 
-def make_genaration(route):
+
+REPLACE_RATIO = 0.6     ####
+THRESHOLD = 0.001
+
+
+
+def make_next_genaration(route):
+    new_genaration = []
+    replace_number = int(len(route)*REPLACE_RATIO)
+    for _ in range(replace_number):
+        route_a = route_b = 0
+        while route_a == route_b :
+            route_a = random.randint(0,len(route)-1)
+            route_b = random.randint(0,len(route)-1)
+
+        new_genaration.append(make_new_route(route[route_a],route[route_b]))        #子供
+
+    return new_genaration
+
+
+def kill_bad_parents(route):        #routeはソート済み
+
+    # generation_sort = sorted( route, key = distance )        # key = lambda g: distance(g) 
+
+    keep_number = int(len(route)*(1-REPLACE_RATIO))
+
+    return route[:keep_number]
+
+
+
+def converged(route, prev):
+    return (prev[0] - route[0]) / route[0]  < THRESHOLD
+
+
+
+def main(route):
     generation = []
     for i in range(len(route)):
-        generation[i] = make_random_route(route)        #第一世代の生成(経路のリスト)
+        randomroute = make_random_route(route)
+        generation.extend([i, randomroute])        #第一世代の生成(経路のリスト)
 
-    for i in range(len(route)):
-        
+        print(generation)
+    
+    generation.sort(key=lambda x: distance(x[1]))
+    prev = None
 
-    next_generation = []
-    half = len(route) // 2.5
+    while not converged(generation, prev) :
+        children = make_next_genaration(generation)
+        children.extend(kill_bad_parents(generation))
+
+        children.sort(key = distance)
+
+        assert(len(generation) == len(children))
+        prev = generation
+        generation = children
+
     
 
-    #元の世代の上位40%を次世代に引き継いだリスト
-    next_generation.append()   
 
+def main_test(route):
+    generation = []
     for i in range(len(route)):
-    make_new_route(,)
+        randomroute = make_random_route(route)
+        print(randomroute)
+        generation.append([i, randomroute])        #第一世代の生成(経路のリスト)
+
+    print(generation)
+
+    generation.sort(key=lambda x: distance(x[1]))
+
+    print(generation)
+
+    
+
+    return generation
+
+
 
 
 
@@ -87,4 +154,10 @@ print(distance(new))
 
 print(check_destance(test_route,maked,new))
 
-print(make_genaration(test_route))
+
+
+# print(main(test_route))
+
+print(main_test(test_route) )
+print("-----------------")
+print(make_next_genaration(test_route))
